@@ -20,12 +20,15 @@ There is no test suite configured in this repo.
 
 ## Architecture
 
-This is a minimal, single-page Vite + React 19 app with no router and no external state management or backend — everything lives in one component:
+This is a minimal, single-page Vite + React 19 app with no router and no external state management or backend. `App` owns the transactions state and composes three presentational/stateful child components:
 
 - `src/main.jsx` — entry point, mounts `<App />` into `#root` inside `StrictMode`.
-- `src/App.jsx` — the entire application. All state (transactions list and form/filter inputs), derived totals (income/expenses/balance), filtering logic, and the add-transaction form/table UI live in this single component via `useState` and inline computations. Transaction data is in-memory only (seeded with hardcoded sample transactions) and resets on reload — there is no persistence layer.
+- `src/App.jsx` — owns the `transactions` state (seeded with hardcoded sample data; in-memory only, resets on reload, no persistence layer) and the static `categories` list. Passes `transactions` down to `Summary` and `TransactionList`, and passes an `onAddTransaction` callback (`handleAddTransaction`) down to `TransactionForm` to append new transactions.
+- `src/Summary.jsx` — derives `totalIncome`, `totalExpenses`, and `balance` from the `transactions` prop and renders the three summary cards.
+- `src/TransactionForm.jsx` — owns its own form field state (description, amount, type, category) and the add-transaction form UI. On submit, builds the new transaction object and invokes `onAddTransaction`, then resets its local fields.
+- `src/TransactionList.jsx` — owns its own filter state (`filterType`, `filterCategory`) and renders the type/category filter selects plus the transactions table, filtering the `transactions` prop it receives.
 - `src/App.css` / `src/index.css` — styling.
 
-Because everything is colocated in one component, most changes (bug fixes, new fields, filters, persistence, splitting into subcomponents) will involve editing `src/App.jsx` directly rather than tracing logic across multiple files.
+Because state is split by concern (transactions in `App`, form fields in `TransactionForm`, filters in `TransactionList`), most feature work involves editing the specific component that owns the relevant state rather than `App.jsx` directly — e.g. new form fields go in `TransactionForm.jsx`, new filters go in `TransactionList.jsx`, new derived totals go in `Summary.jsx`.
 
 ESLint config (`eslint.config.js`) uses the flat config format with `react-hooks` and `react-refresh` plugin rules; `no-unused-vars` is configured to ignore uppercase-prefixed identifiers.
